@@ -1,32 +1,54 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-public class script : MonoBehaviour
+//create a script that makes a rigidbody line from a GameObject position to the mouse cursor.
+public class Line : MonoBehaviour
 {
-    public float moveSpeed = 5f;
+    public GameObject linePrefab;
+    public GameObject currentLine;
+    public LineRenderer lineRenderer;
+    public EdgeCollider2D edgeCollider;
+    public List<Vector2> fingerPositions;
 
-    public Rigidbody2D rb;
-    public Camera cam;
-
-    Vector2 movement;
-    Vector2 mousePos;
+    // Start is called before the first frame update
+    void Start()
+    {
+        
+    }
 
     // Update is called once per frame
     void Update()
     {
-        movement.x = Input.GetAxisRaw("Horizontal");
-        movement.y = Input.GetAxisRaw("Vertical");
-
-        mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
+        if (Input.GetMouseButtonDown(0))
+        {
+            CreateLine();
+        }
+        if (Input.GetMouseButton(0))
+        {
+            Vector2 tempFingerPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            if (Vector2.Distance(tempFingerPos, fingerPositions[fingerPositions.Count - 1]) > .1f)
+            {
+                UpdateLine(tempFingerPos);
+            }
+        }
     }
-
-    private void FixedUpdate()
+    void CreateLine()
     {
-        rb.MovePosition(rb.position + movement * moveSpeed * Time.fixedDeltaTime);
-
-        Vector2 lookDir = mousePos - rb.position;
-        float angle = Mathf.Atan2(lookDir.y ,lookDir.x) * Mathf.Rad2Deg - 90f;
-        rb.rotation = angle;
+        currentLine = Instantiate(linePrefab, Vector3.zero, Quaternion.identity);
+        lineRenderer = currentLine.GetComponent<LineRenderer>();
+        edgeCollider = currentLine.GetComponent<EdgeCollider2D>();
+        fingerPositions.Clear();
+        fingerPositions.Add(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+        fingerPositions.Add(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+        lineRenderer.SetPosition(0, fingerPositions[0]);
+        lineRenderer.SetPosition(1, fingerPositions[1]);
+        edgeCollider.points = fingerPositions.ToArray();
+    }
+    void UpdateLine(Vector2 newFingerPos)
+    {
+        fingerPositions.Add(newFingerPos);
+        lineRenderer.positionCount++;
+        lineRenderer.SetPosition(lineRenderer.positionCount - 1, newFingerPos);
+        edgeCollider.points = fingerPositions.ToArray();
     }
 }
